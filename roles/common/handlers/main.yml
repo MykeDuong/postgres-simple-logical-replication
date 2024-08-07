@@ -1,0 +1,7 @@
+---
+# handlers file for common
+- name: Restart PostgreSQL
+  service:
+    name: postgresql
+    state: restarted
+    enabled: yes

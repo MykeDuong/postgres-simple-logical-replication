@@ -1,0 +1,20 @@
+- hosts: all
+  vars_files:
+    - vault.yml
+    - vars/global.yml
+  roles: 
+    - common
+
+- hosts: masters 
+  vars_files:
+    - vault.yml
+    - vars/global.yml
+  roles: 
+    - master 
+
+- hosts: replications 
+  vars_files:
+    - vault.yml
+    - vars/global.yml
+  roles: 
+    - replication 

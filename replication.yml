@@ -1,0 +1,31 @@
+- name: Replication configuration
+  hosts: replication 
+  vars_files:
+    - vault.yml
+    - vars.yml
+  tasks:
+    - name: Create table
+      become: true
+      become_user: postgres
+      postgresql_table:
+        db: db1
+        name: tbl
+        owner: "{{ postgresql_users[0].name }}"
+        columns:
+          - x int primary key
+          - y int
+    - name: Create subscription 
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_subscription:
+        db: db1
+        name: tbl_subscription 
+        state: present
+        publications: tbl_publication
+        owner: vincent
+        connparams:
+          host: 172.17.0.2
+          port: 5432
+          user: "{{ postgresql_users[0].name }}" 
+          password: "{{ postgresql_users[0].password }}" 
+          dbname: db1

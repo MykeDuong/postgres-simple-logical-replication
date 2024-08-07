@@ -1,0 +1,83 @@
+---
+# tasks file for common
+- name: Install PostgreSQL
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - pip
+      - python3-psycopg2
+      - sudo
+    state: present
+    update_cache: yes
+- name: Start PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+- name: Set options
+  community.postgresql.postgresql_set:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  become: true
+  become_user: postgres
+  with_items: "{{ postgresql_options }}"
+  notify:
+    - Restart PostgreSQL
+- name: Add entries to pg_hba
+  community.postgresql.postgresql_pg_hba:
+    dest: "/etc/postgresql/12/main/pg_hba.conf"
+    address: "{{ item.address | default(omit) }}"
+    contype: "{{ item.contype }}"
+    databases: "{{ item.databases }}"
+    method: "{{ item.method }}"
+    users: "{{ item.users }}"
+  become: true
+  become_user: postgres
+  with_items: "{{ postgresql_hba_entries }}"
+  notify: Restart PostgreSQL
+- name: Create the databases
+  community.postgresql.postgresql_db:
+    name: "{{ item }}"
+    encoding: "UTF-8"
+  become: true
+  become_user: postgres
+  with_items: "{{ postgresql_databases }}"
+- name: Create the users
+  community.postgresql.postgresql_user:
+    db: "{{ item.db }}"
+    name: "{{ item.name }}"
+    password: "{{ item.password | default(omit) }}"
+    role_attr_flags: REPLICATION,SUPERUSER
+  become: true
+  become_user: postgres
+  environment:
+    PGOPTIONS: "-c password_encryption=scram-sha-256"
+  with_items: "{{ postgresql_users }}"
+
+- name: Create the schemas
+  community.postgresql.postgresql_schema:
+    db: "{{ item.db }}"
+    name: "{{ item.name }}"
+    owner: "{{ item.name }}"
+  become: true
+  become_user: postgres
+  with_items: "{{ postgresql_schemas }}"
+  notify:
+    - Restart PostgreSQL
+- name: Allow connections from outside
+  lineinfile:
+    path: /etc/postgresql/12/main/postgresql.conf
+    regexp: listen_addresses =* 
+    line: listen_addresses = '*'
+    state: present
+  notify: 
+    - Restart PostgreSQL
+- name: Change WAL level for logical replication
+  lineinfile:
+    path: /etc/postgresql/12/main/postgresql.conf
+    regexp: wal_level = * 
+    line: wal_level = logical 
+    state: present
+  notify: 
+    - Restart PostgreSQL

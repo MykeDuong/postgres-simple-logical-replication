@@ -1,0 +1,10 @@
+[all:vars]
+ansible_user=root
+ansible_ssh_pass=password
+
+[masters]
+master ansible_host=127.0.0.1 ansible_port=2222 ansible_python_interpreter=/usr/bin/python3
+
+[replications]
+replication ansible_host=127.0.0.1 ansible_port=2223 ansible_python_interpreter=/usr/bin/python3
+

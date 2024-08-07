@@ -1,0 +1,23 @@
+- name: Master configuration
+  hosts: master
+  vars_files:
+    - vault.yml
+    - vars.yml
+  tasks:
+    - name: Create table
+      become: true
+      become_user: postgres
+      postgresql_table:
+        db: db1
+        name: tbl
+        owner: "{{ postgresql_schemas[0].name }}"
+        columns:
+          - x int primary key
+          - y int
+    - name: Create publication 
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_publication:
+        db: db1
+        name: tbl_publication 
+        tables: tbl
